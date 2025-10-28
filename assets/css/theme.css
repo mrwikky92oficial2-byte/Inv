@@ -1,0 +1,66 @@
+:root{
+  --purple-50:#f6f3ff;
+  --purple-100:#ede7ff;
+  --purple-200:#daceff;
+  --purple-300:#b69aff;
+  --purple-400:#9161ff;
+  --purple-500:#6f2cff;
+  --purple-600:#5a20d6;
+  --purple-700:#471aa8;
+  --purple-800:#36147d;
+  --purple-900:#260e57;
+}
+
+body{
+  background: linear-gradient(180deg, var(--purple-50), #ffffff 300px);
+  color:#222;
+}
+
+.navbar-brand{
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.navbar-purple{
+  background: linear-gradient(90deg, var(--purple-600), var(--purple-500));
+}
+
+.navbar-purple .nav-link,
+.navbar-purple .navbar-brand{
+  color:#fff;
+}
+.navbar-purple .nav-link.active,
+.navbar-purple .nav-link:hover{
+  color: #fff;
+  opacity:.9;
+}
+
+.text-purple{ color: var(--purple-600) !important; }
+
+.btn-primary{
+  --bs-btn-bg: var(--purple-600);
+  --bs-btn-border-color: var(--purple-600);
+  --bs-btn-hover-bg: var(--purple-700);
+  --bs-btn-hover-border-color: var(--purple-700);
+}
+
+.badge.bg-primary-subtle{
+  background: var(--purple-100) !important;
+}
+
+.card{
+  border-radius: 14px;
+}
+
+.table thead th{
+  color: var(--purple-800);
+  font-weight: 600;
+}
+
+.form-check-input:checked{
+  background-color: var(--purple-600);
+  border-color: var(--purple-600);
+}
+
+.link-purple{ color: var(--purple-600); }
+.link-purple:hover{ color: var(--purple-700); }
