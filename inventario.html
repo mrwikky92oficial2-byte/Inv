@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Inventario | Inventario</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header id="app-header"></header>
+  <main class="container">
+    <h1 class="page-title">Inventario</h1>
+    <div class="page-subtitle">Consulta por ubicación y totales</div>
+
+    <section class="card">
+      <div class="card-header">
+        <div class="row">
+          <label class="label" for="sel-location">Ubicación</label>
+          <select id="sel-location" class="select"></select>
+        </div>
+        <div class="spacer"></div>
+        <div class="row">
+          <label class="label" for="search">Buscar</label>
+          <input id="search" class="input" placeholder="SKU o nombre" />
+        </div>
+      </div>
+      <div class="card-body" id="inventory-table"></div>
+    </section>
+
+    <div class="footer small">Hecho con 💜 — Sistema de Inventario</div>
+  </main>
+
+  <script type="module">
+    import { getLocations, getInventoryByLocation, getProducts, searchProducts } from './js/data.js';
+    import './js/common.js';
+
+    const sel = document.getElementById('sel-location');
+    const table = document.getElementById('inventory-table');
+    const search = document.getElementById('search');
+
+    function loadLocations() {
+      const opts = ['<option value="ALL">Todas las ubicaciones (totales)</option>', ...getLocations().map(l => `<option value="${l.id}">${l.nombre}</option>`)];
+      sel.innerHTML = opts.join('');
+    }
+
+    function render() {
+      const loc = sel.value || 'ALL';
+      const prods = searchProducts(search.value);
+      let entries = getInventoryByLocation(loc);
+
+      // Si es ALL, entries viene sin nombres. Expandir a productos
+      const prodMap = new Map(getProducts().map(p => [p.id, p]));
+      const rows = [];
+      for (const p of prods) {
+        const e = entries.find(x => x.productId === p.id) || { qty: 0 };
+        rows.push(`<tr>
+          <td>${p.nombre} <span class=small>(${p.sku})</span></td>
+          <td>${e.qty}</td>
+          <td>${p.minQty}</td>
+          <td>${p.maxQty}</td>
+          <td>$${(p.precioCompra ?? 0).toLocaleString('es-CL')}</td>
+          <td>$${(p.precioVenta ?? 0).toLocaleString('es-CL')}</td>
+        </tr>`);
+      }
+
+      table.innerHTML = [`<table class="table">`,
+        `<thead><tr><th>Producto</th><th>Cantidad</th><th>Mín</th><th>Máx</th><th>Precio compra</th><th>Precio venta</th></tr></thead>`,
+        `<tbody>`,
+        ...rows,
+        `</tbody></table>`
+      ].join('');
+    }
+
+    sel.addEventListener('change', render);
+    search.addEventListener('input', render);
+
+    loadLocations();
+    render();
+  </script>
+</body>
+</html>

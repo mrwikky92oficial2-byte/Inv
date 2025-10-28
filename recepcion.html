@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Recepción | Inventario</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header id="app-header"></header>
+  <main class="container">
+    <h1 class="page-title">Recepción de inventario</h1>
+    <div class="page-subtitle">Registra entradas de productos en tiendas o bodega</div>
+
+    <section class="card">
+      <div class="card-body">
+        <div class="form-row">
+          <div class="field w-2">
+            <label class="label" for="rec-location">Ubicación</label>
+            <select id="rec-location" class="select"></select>
+          </div>
+          <div class="field w-2">
+            <label class="label" for="rec-product">Producto</label>
+            <select id="rec-product" class="select"></select>
+          </div>
+          <div class="field w-1">
+            <label class="label" for="rec-qty">Cantidad</label>
+            <input id="rec-qty" type="number" min="0" class="input" />
+          </div>
+          <div class="field w-1">
+            <label class="label" for="rec-cost">Nuevo costo (opcional)</label>
+            <input id="rec-cost" type="number" min="0" step="0.01" class="input" />
+          </div>
+        </div>
+        <div class="actions" style="margin-top: 12px">
+          <button id="btn-receive" class="btn btn-primary">Registrar recepción</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer small">Hecho con 💜 — Sistema de Inventario</div>
+  </main>
+
+  <script type="module">
+    import { getLocations, getProducts, receiveInventory } from './js/data.js';
+    import './js/common.js';
+
+    const locSel = document.getElementById('rec-location');
+    const prodSel = document.getElementById('rec-product');
+    const qtyInput = document.getElementById('rec-qty');
+    const costInput = document.getElementById('rec-cost');
+    const btn = document.getElementById('btn-receive');
+
+    function loadForm() {
+      locSel.innerHTML = getLocations().map(l => `<option value="${l.id}">${l.nombre}</option>`).join('');
+      prodSel.innerHTML = getProducts().map(p => `<option value="${p.id}">${p.nombre} (${p.sku})</option>`).join('');
+    }
+
+    btn.addEventListener('click', () => {
+      const locationId = locSel.value;
+      const productId = prodSel.value;
+      const qty = Number(qtyInput.value || 0);
+      const nuevoCosto = costInput.value ? Number(costInput.value) : null;
+      if (!locationId || !productId || qty <= 0) {
+        alert('Completa los campos correctamente');
+        return;
+      }
+      receiveInventory({ locationId, productId, qty, nuevoCosto });
+      qtyInput.value = '';
+      costInput.value = '';
+      alert('Recepción registrada');
+    });
+
+    loadForm();
+  </script>
+</body>
+</html>
