@@ -1,0 +1,76 @@
+/* Purple & white theme overrides for Bootstrap */
+:root {
+  --brand-primary: #6f42c1; /* Bootstrap purple */
+  --brand-primary-600: #5a2ea6;
+  --brand-primary-700: #4b278a;
+  --brand-accent: #b08cf7;
+  --brand-bg: #f8f6ff;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--brand-bg);
+}
+
+.navbar.navbar-purple {
+  background: linear-gradient(90deg, var(--brand-primary-700), var(--brand-primary));
+}
+
+.navbar.navbar-purple .navbar-brand,
+.navbar.navbar-purple .nav-link,
+.navbar.navbar-purple .navbar-toggler {
+  color: #fff;
+}
+
+.navbar.navbar-purple .nav-link.active,
+.navbar.navbar-purple .nav-link:hover {
+  color: #fff;
+  position: relative;
+}
+
+.navbar.navbar-purple .nav-link.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 3px;
+  background: #fff;
+  border-radius: 2px;
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--brand-primary);
+  --bs-btn-border-color: var(--brand-primary);
+  --bs-btn-hover-bg: var(--brand-primary-600);
+  --bs-btn-hover-border-color: var(--brand-primary-600);
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--brand-accent);
+  box-shadow: 0 0 0 .25rem rgba(176, 140, 247, .35);
+}
+
+.card.card-ghost {
+  border: none;
+  box-shadow: 0 6px 20px rgba(111, 66, 193, .12);
+}
+
+.badge-purple {
+  background-color: var(--brand-primary);
+}
+
+.table thead th {
+  background: rgba(111, 66, 193, .06);
+}
+
+a { color: var(--brand-primary); }
+a:hover { color: var(--brand-primary-700); }
+
+.small-muted {
+  color: #8b8b8b;
+  font-size: .9rem;
+}
