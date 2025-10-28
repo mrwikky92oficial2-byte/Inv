@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Inicio | Inventario</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header id="app-header"></header>
+  <main class="container">
+    <h1 class="page-title">Panel general</h1>
+    <div class="page-subtitle">Productos próximos a acabarse y resumen general</div>
+
+    <section class="grid cols-3">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Bajo stock</div></div>
+        <div class="card-body">
+          <div id="low-stock-list"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Estadísticas</div></div>
+        <div class="card-body">
+          <div class="grid cols-2">
+            <div>
+              <div class="small">Productos</div>
+              <div id="stat-products" class="page-title" style="margin:4px 0 0"></div>
+            </div>
+            <div>
+              <div class="small">Ubicaciones</div>
+              <div id="stat-locations" class="page-title" style="margin:4px 0 0"></div>
+            </div>
+            <div>
+              <div class="small">Valor inventario (aprox.)</div>
+              <div id="stat-value" class="page-title" style="margin:4px 0 0"></div>
+            </div>
+            <div>
+              <div class="small">Movimientos recientes</div>
+              <div id="stat-moves" class="page-title" style="margin:4px 0 0"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Acciones rápidas</div></div>
+        <div class="card-body actions">
+          <a class="btn btn-primary" href="recepcion.html">+ Recibir inventario</a>
+          <a class="btn btn-outline" href="transferencias.html">Crear transferencia</a>
+          <a class="btn btn-outline" href="compras.html">Nueva orden de compra</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer small">Hecho con 💜 — Sistema de Inventario</div>
+  </main>
+
+  <script type="module">
+    import { getLowStockEntries, getProducts, getLocations, getAggregatedValueCLP, getTransfers, findProduct, findLocation, formatCurrency } from './js/data.js';
+    import './js/common.js';
+
+    function badge(status) {
+      if (status === 'Bajo') return '<span class="badge danger">Bajo</span>';
+      if (status === 'Cerca') return '<span class="badge low">Cerca del mínimo</span>';
+      return '<span class="badge ok">OK</span>';
+    }
+
+    function renderLowStock() {
+      const list = document.getElementById('low-stock-list');
+      const entries = getLowStockEntries({ includeNear: true });
+      if (!entries.length) {
+        list.innerHTML = '<div class="small">Todo en orden ✅</div>';
+        return;
+      }
+      const products = getProducts();
+      const locations = getLocations();
+
+      const html = [`<table class="table">`,
+        `<thead><tr><th>Producto</th><th>Ubicación</th><th>Cantidad</th><th>Mínimo</th><th>Estado</th></tr></thead>`,
+        `<tbody>`,
+        ...entries.map(e => {
+          const p = products.find(x => x.id === e.productId);
+          const l = locations.find(x => x.id === e.locationId);
+          return `<tr>
+            <td>${p?.nombre || ''} <span class="small">(${p?.sku || ''})</span></td>
+            <td>${l?.nombre || ''}</td>
+            <td>${e.qty}</td>
+            <td>${e.minQty}</td>
+            <td>${badge(e.status)}</td>
+          </tr>`;
+        }),
+        `</tbody></table>`
+      ].join('');
+      list.innerHTML = html;
+    }
+
+    function renderStats() {
+      document.getElementById('stat-products').textContent = getProducts().length;
+      document.getElementById('stat-locations').textContent = getLocations().length;
+      const value = getAggregatedValueCLP();
+      document.getElementById('stat-value').textContent = formatCurrency(value);
+      document.getElementById('stat-moves').textContent = getTransfers().length;
+    }
+
+    renderLowStock();
+    renderStats();
+  </script>
+</body>
+</html>

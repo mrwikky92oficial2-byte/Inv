@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Transferencias | Inventario</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header id="app-header"></header>
+  <main class="container">
+    <h1 class="page-title">Transferencias entre ubicaciones</h1>
+    <div class="page-subtitle">Solicita productos a otras tiendas o bodegas</div>
+
+    <section class="card">
+      <div class="card-body">
+        <div class="form-row">
+          <div class="field w-2">
+            <label class="label" for="from">Desde</label>
+            <select id="from" class="select"></select>
+          </div>
+          <div class="field w-2">
+            <label class="label" for="to">Hacia</label>
+            <select id="to" class="select"></select>
+          </div>
+          <div class="field w-2">
+            <label class="label" for="product">Producto</label>
+            <select id="product" class="select"></select>
+          </div>
+          <div class="field w-1">
+            <label class="label" for="qty">Cantidad</label>
+            <input id="qty" type="number" min="0" class="input" />
+          </div>
+        </div>
+        <div class="actions" style="margin-top: 12px">
+          <button id="btn-add" class="btn btn-secondary">Agregar a lista</button>
+          <div class="spacer"></div>
+          <button id="btn-create" class="btn btn-primary">Crear transferencia</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top: 16px">
+      <div class="card-header"><div class="card-title">Items a transferir</div></div>
+      <div class="card-body" id="items"></div>
+    </section>
+
+    <section class="card" style="margin-top: 16px">
+      <div class="card-header"><div class="card-title">Historial</div></div>
+      <div class="card-body" id="history"></div>
+    </section>
+
+    <div class="footer small">Hecho con 💜 — Sistema de Inventario</div>
+  </main>
+
+  <script type="module">
+    import { getLocations, getProducts, createTransfer, getTransfers } from './js/data.js';
+    import './js/common.js';
+
+    const fromSel = document.getElementById('from');
+    const toSel = document.getElementById('to');
+    const prodSel = document.getElementById('product');
+    const qtyInput = document.getElementById('qty');
+    const itemsEl = document.getElementById('items');
+    const historyEl = document.getElementById('history');
+
+    let items = [];
+
+    function loadSelectors() {
+      const locs = getLocations();
+      const prods = getProducts();
+      fromSel.innerHTML = locs.map(l => `<option value="${l.id}">${l.nombre}</option>`).join('');
+      toSel.innerHTML = locs.map(l => `<option value="${l.id}">${l.nombre}</option>`).join('');
+      prodSel.innerHTML = prods.map(p => `<option value="${p.id}">${p.nombre} (${p.sku})</option>`).join('');
+    }
+
+    function renderItems() {
+      if (!items.length) {
+        itemsEl.innerHTML = '<div class="small">No hay items.</div>';
+        return;
+      }
+      const prods = getProducts();
+      itemsEl.innerHTML = [`<table class="table">`,
+        `<thead><tr><th>Producto</th><th>Cantidad</th><th></th></tr></thead>`,
+        `<tbody>`,
+        ...items.map((it, idx) => {
+          const p = prods.find(x => x.id === it.productId);
+          return `<tr>
+            <td>${p?.nombre || ''} <span class=small>(${p?.sku || ''})</span></td>
+            <td>${it.qty}</td>
+            <td><button data-idx="${idx}" class="btn btn-danger btn-del">Quitar</button></td>
+          </tr>`;
+        }),
+        `</tbody></table>`
+      ].join('');
+      for (const b of itemsEl.querySelectorAll('.btn-del')) {
+        b.addEventListener('click', (e) => {
+          const i = Number(e.currentTarget.getAttribute('data-idx'));
+          items.splice(i, 1);
+          renderItems();
+        });
+      }
+    }
+
+    function renderHistory() {
+      const transfers = getTransfers().slice().reverse();
+      if (!transfers.length) {
+        historyEl.innerHTML = '<div class="small">Sin movimientos.</div>';
+        return;
+      }
+      const locs = getLocations();
+      const prods = getProducts();
+      historyEl.innerHTML = [`<table class="table">`,
+        `<thead><tr><th>Fecha</th><th>Desde</th><th>Hacia</th><th>Items</th></tr></thead>`,
+        `<tbody>`,
+        ...transfers.map(t => {
+          const from = locs.find(l => l.id === t.fromLocationId)?.nombre || '';
+          const to = locs.find(l => l.id === t.toLocationId)?.nombre || '';
+          const itemsHtml = t.items.map(it => {
+            const p = prods.find(x => x.id === it.productId);
+            return `${p?.nombre || ''} x ${it.qty}`;
+          }).join('<br/>');
+          return `<tr>
+            <td>${new Date(t.createdAt).toLocaleString()}</td>
+            <td>${from}</td>
+            <td>${to}</td>
+            <td>${itemsHtml}</td>
+          </tr>`;
+        }),
+        `</tbody></table>`
+      ].join('');
+    }
+
+    document.getElementById('btn-add').addEventListener('click', () => {
+      const productId = prodSel.value;
+      const qty = Number(qtyInput.value || 0);
+      if (!productId || qty <= 0) return alert('Producto y cantidad válidos');
+      items.push({ productId, qty });
+      qtyInput.value = '';
+      renderItems();
+    });
+
+    document.getElementById('btn-create').addEventListener('click', () => {
+      const fromLocationId = fromSel.value;
+      const toLocationId = toSel.value;
+      if (!fromLocationId || !toLocationId || fromLocationId === toLocationId) {
+        return alert('Selecciona ubicaciones distintas');
+      }
+      if (!items.length) return alert('Agrega al menos un item');
+      createTransfer({ fromLocationId, toLocationId, items });
+      items = [];
+      renderItems();
+      renderHistory();
+      alert('Transferencia creada');
+    });
+
+    loadSelectors();
+    renderItems();
+    renderHistory();
+  </script>
+</body>
+</html>

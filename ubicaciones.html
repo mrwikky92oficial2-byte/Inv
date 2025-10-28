@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ubicaciones | Inventario</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header id="app-header"></header>
+  <main class="container">
+    <h1 class="page-title">Ubicaciones</h1>
+    <div class="page-subtitle">Tiendas y bodegas</div>
+
+    <section class="card">
+      <div class="card-body">
+        <div class="form-row">
+          <div class="field w-2">
+            <label class="label" for="nombre">Nombre</label>
+            <input id="nombre" class="input" />
+          </div>
+          <div class="field w-2">
+            <label class="label" for="tipo">Tipo</label>
+            <select id="tipo" class="select">
+              <option value="Tienda">Tienda</option>
+              <option value="Bodega">Bodega</option>
+            </select>
+          </div>
+          <div class="field w-2" style="display:none">
+            <!-- reservado para flags -->
+          </div>
+        </div>
+        <div class="actions" style="margin-top: 12px">
+          <button id="btn-add" class="btn btn-primary">Agregar ubicación</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top: 16px">
+      <div class="card-header"><div class="card-title">Listado</div></div>
+      <div class="card-body" id="list"></div>
+    </section>
+
+    <div class="footer small">Hecho con 💜 — Sistema de Inventario</div>
+  </main>
+
+  <script type="module">
+    import { getLocations, addLocation, deleteLocation } from './js/data.js';
+    import './js/common.js';
+
+    const nombre = document.getElementById('nombre');
+    const tipo = document.getElementById('tipo');
+    const listEl = document.getElementById('list');
+
+    function render() {
+      const locs = getLocations();
+      if (!locs.length) return listEl.innerHTML = '<div class="small">No hay ubicaciones.</div>';
+      listEl.innerHTML = [`<table class="table">`,
+        `<thead><tr><th>Nombre</th><th>Tipo</th><th></th></tr></thead>`,
+        `<tbody>`,
+        ...locs.map(l => `<tr>
+          <td>${l.nombre}</td>
+          <td>${l.tipo}${l.esCentral ? ' <span class=badge info>Central</span>' : ''}</td>
+          <td>${l.esCentral ? '' : `<button class="btn btn-danger" data-id="${l.id}">Eliminar</button>`}</td>
+        </tr>`),
+        `</tbody></table>`
+      ].join('');
+
+      for (const b of listEl.querySelectorAll('button[data-id]')) {
+        b.addEventListener('click', (e) => {
+          const id = e.currentTarget.getAttribute('data-id');
+          if (confirm('¿Eliminar ubicación? Inventario asociado será removido.')) {
+            deleteLocation(id);
+            render();
+          }
+        });
+      }
+    }
+
+    document.getElementById('btn-add').addEventListener('click', () => {
+      if (!nombre.value) return alert('Nombre requerido');
+      addLocation({ nombre: nombre.value, tipo: tipo.value });
+      nombre.value = '';
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

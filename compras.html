@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Compras | Inventario</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header id="app-header"></header>
+  <main class="container">
+    <h1 class="page-title">Órdenes de compra</h1>
+    <div class="page-subtitle">Genera pedidos de artículos faltantes</div>
+
+    <section class="card">
+      <div class="card-body">
+        <div class="form-row">
+          <div class="field w-2">
+            <label class="label" for="po-location">Ubicación</label>
+            <select id="po-location" class="select"></select>
+          </div>
+          <div class="field w-2">
+            <label class="label" for="po-product">Producto</label>
+            <select id="po-product" class="select"></select>
+          </div>
+          <div class="field w-1">
+            <label class="label" for="po-qty">Cantidad</label>
+            <input id="po-qty" type="number" min="0" class="input" />
+          </div>
+          <div class="field w-1">
+            <label class="label" for="po-cost">Costo unitario</label>
+            <input id="po-cost" type="number" min="0" step="0.01" class="input" />
+          </div>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label class="label" for="po-notes">Notas</label>
+            <textarea id="po-notes" class="textarea" placeholder="Notas para el proveedor"></textarea>
+          </div>
+        </div>
+        <div class="actions" style="margin-top: 12px">
+          <button id="po-add" class="btn btn-secondary">Agregar item</button>
+          <div class="spacer"></div>
+          <button id="po-create" class="btn btn-primary">Crear orden</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top: 16px">
+      <div class="card-header"><div class="card-title">Items</div></div>
+      <div class="card-body" id="po-items"></div>
+    </section>
+
+    <section class="card" style="margin-top: 16px">
+      <div class="card-header"><div class="card-title">Órdenes creadas</div></div>
+      <div class="card-body" id="po-list"></div>
+    </section>
+
+    <div class="footer small">Hecho con 💜 — Sistema de Inventario</div>
+  </main>
+
+  <script type="module">
+    import { getLocations, getProducts, createPurchaseOrder, getPurchaseOrders, receivePurchaseOrder } from './js/data.js';
+    import './js/common.js';
+
+    const locSel = document.getElementById('po-location');
+    const prodSel = document.getElementById('po-product');
+    const qtyInput = document.getElementById('po-qty');
+    const costInput = document.getElementById('po-cost');
+    const notesInput = document.getElementById('po-notes');
+    const itemsEl = document.getElementById('po-items');
+    const listEl = document.getElementById('po-list');
+
+    let items = [];
+
+    function loadSelectors() {
+      locSel.innerHTML = getLocations().map(l => `<option value="${l.id}">${l.nombre}</option>`).join('');
+      prodSel.innerHTML = getProducts().map(p => `<option value="${p.id}">${p.nombre} (${p.sku})</option>`).join('');
+    }
+
+    function renderItems() {
+      if (!items.length) return itemsEl.innerHTML = '<div class="small">Sin items.</div>';
+      const prods = getProducts();
+      itemsEl.innerHTML = [`<table class="table">`,
+        `<thead><tr><th>Producto</th><th>Cantidad</th><th>Costo unitario</th><th></th></tr></thead>`,
+        `<tbody>`,
+        ...items.map((it, idx) => {
+          const p = prods.find(x => x.id === it.productId);
+          return `<tr>
+            <td>${p?.nombre || ''} <span class=small>(${p?.sku || ''})</span></td>
+            <td>${it.qty}</td>
+            <td>$${(it.unitCost ?? 0).toLocaleString('es-CL')}</td>
+            <td><button data-idx="${idx}" class="btn btn-danger btn-del">Quitar</button></td>
+          </tr>`;
+        }),
+        `</tbody></table>`
+      ].join('');
+      for (const b of itemsEl.querySelectorAll('.btn-del')) {
+        b.addEventListener('click', (e) => {
+          const i = Number(e.currentTarget.getAttribute('data-idx'));
+          items.splice(i, 1);
+          renderItems();
+        });
+      }
+    }
+
+    function renderOrders() {
+      const orders = getPurchaseOrders().slice().reverse();
+      const prods = getProducts();
+      const locs = getLocations();
+      if (!orders.length) return listEl.innerHTML = '<div class="small">No hay órdenes.</div>';
+      listEl.innerHTML = [`<table class="table">`,
+        `<thead><tr><th>Fecha</th><th>Ubicación</th><th>Items</th><th>Estado</th><th></th></tr></thead>`,
+        `<tbody>`,
+        ...orders.map(o => {
+          const loc = locs.find(l => l.id === o.locationId)?.nombre || '';
+          const itemsHtml = o.items.map(it => {
+            const p = prods.find(x => x.id === it.productId);
+            return `${p?.nombre || ''} x ${it.qty} @ $${(it.unitCost ?? 0).toLocaleString('es-CL')}`;
+          }).join('<br/>');
+          return `<tr>
+            <td>${new Date(o.createdAt).toLocaleString()}</td>
+            <td>${loc}</td>
+            <td>${itemsHtml}</td>
+            <td><span class="badge ${o.status === 'Pendiente' ? 'info' : 'ok'}">${o.status}</span></td>
+            <td>${o.status === 'Pendiente' ? `<button class="btn btn-primary" data-id="${o.id}">Registrar recepción</button>` : ''}</td>
+          </tr>`;
+        }),
+        `</tbody></table>`
+      ].join('');
+
+      for (const b of listEl.querySelectorAll('button[data-id]')) {
+        b.addEventListener('click', (e) => {
+          const id = e.currentTarget.getAttribute('data-id');
+          receivePurchaseOrder(id);
+          renderOrders();
+          alert('Orden marcada como recibida');
+        });
+      }
+    }
+
+    document.getElementById('po-add').addEventListener('click', () => {
+      const productId = prodSel.value;
+      const qty = Number(qtyInput.value || 0);
+      const unitCost = Number(costInput.value || 0);
+      if (!productId || qty <= 0) return alert('Producto y cantidad válidos');
+      items.push({ productId, qty, unitCost });
+      qtyInput.value = '';
+      costInput.value = '';
+      renderItems();
+    });
+
+    document.getElementById('po-create').addEventListener('click', () => {
+      const locationId = locSel.value;
+      if (!locationId) return alert('Selecciona ubicación');
+      if (!items.length) return alert('Agrega items');
+      createPurchaseOrder({ locationId, items, notas: notesInput.value });
+      items = [];
+      notesInput.value = '';
+      renderItems();
+      renderOrders();
+      alert('Orden creada');
+    });
+
+    loadSelectors();
+    renderItems();
+    renderOrders();
+  </script>
+</body>
+</html>
